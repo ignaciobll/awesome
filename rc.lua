@@ -196,7 +196,7 @@ for s = 1, screen.count() do
     -- Widgets that are aligned to the right
     local right_layout = wibox.layout.fixed.horizontal()
     if s == 1 then right_layout:add(wibox.widget.systray()) end
-        right_layout:add(mytextclock)
+    right_layout:add(mytextclock)
     right_layout:add(mylayoutbox[s])
 
     -- Now bring it all together (with the tasklist in the middle)
@@ -276,7 +276,11 @@ globalkeys = awful.util.table.join(
                   awful.util.getdir("cache") .. "/history_eval")
               end),
     -- Menubar
-    awful.key({ modkey }, "p", function() menubar.show() end)
+    awful.key({ modkey }, "p", function() menubar.show() end),
+
+    awful.key({ "Shift", "Control"}, "F12", function() awful.util.spawn_with_shell("sleep 0.5 && scrot -s /home/ignaciobll/Screenshots/$(date '+%Y-%m-%d-%H:%M:%S').jpg") end)
+
+    
 
 )
 
