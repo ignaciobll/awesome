@@ -40,17 +40,17 @@ end
 -- }}}
 
 -- {{{ Autostart applications
---function run_once(cmd)
---  findme = cmd
---  firstspace = cmd:find(" ")
---  if firstspace then
---     findme = cmd:sub(0, firstspace-1)
---  end
- -- awful.util.spawn_with_shell("pgrep -u $USER -x " .. findme .. " > /dev/null || (" .. cmd .. ")")
---end
+function run_once(cmd)
+  findme = cmd
+  firstspace = cmd:find(" ")
+  if firstspace then
+     findme = cmd:sub(0, firstspace-1)
+  end
+  awful.util.spawn_with_shell("pgrep -u $USER -x " .. findme .. " > /dev/null || (" .. cmd .. ")")
+end
 
---run_once("urxvtd")
---run_once("unclutter -root")
+run_once("xterm")
+run_once("unclutter -root")
 -- }}}
 
 -- {{{ Variable definitions
@@ -61,18 +61,20 @@ beautiful.init(os.getenv("HOME") .. "/.config/awesome/themes/multicolor/theme.lu
 -- common
 modkey     = "Mod4"
 altkey     = "Mod1"
+
 terminal   = "xterm"
 editor     = os.getenv("EDITOR") or "emacs" or "vi"
 editor_cmd = terminal .. " -e " .. editor
 
 -- user defined
-browser    = "firefox"
-browser2   = "vivaldi"
-gui_editor = "emacs"
+browser    = "dwb"
+browser2   = "iron"
+gui_editor = "gvim"
 graphics   = "gimp"
 mail       = terminal .. " -e mutt "
 
 local layouts = {
+    awful.layout.suit.floating,
     awful.layout.suit.tile,
     awful.layout.suit.tile.left,
     awful.layout.suit.tile.bottom,
@@ -87,8 +89,8 @@ local layouts = {
 
 -- {{{ Tags
 tags = {
-   names = { "web", "emacs", "term", "docs", "media", "files", "social" },
-   layout = { layouts[1], layouts[1], layouts[1], layouts[1], layouts[1], layouts[1], layouts[1], layouts[1] }
+   names = { "web", "emacs", "term", "docs", "media", "files", "other", "telegram" },
+   layout = { layouts[1], layouts[3], layouts[4], layouts[1], layouts[7], layouts[1] }
 }
 for s = 1, screen.count() do
 -- Each screen has its own tag table.
@@ -109,9 +111,6 @@ mymainmenu = awful.menu.new({ items = require("menugen").build_menu(),
                               theme = { height = 16, width = 130 }})
 -- }}}
 
--- Menubar configuration
-menubar.utils.terminal = terminal -- Set the terminal for applications that require it
-
 -- {{{ Wibox
 markup      = lain.util.markup
 
@@ -131,6 +130,9 @@ mytextclock = lain.widgets.abase({
     end
 })
 
+-- Menubar configuration
+menubar.utils.terminal = terminal -- Set the terminal for applications that require it
+
 -- Calendar
 lain.widgets.calendar:attach(mytextclock, { font_size = 10 })
 
@@ -141,7 +143,7 @@ myweather = lain.widgets.weather({
     settings = function()
         descr = weather_now["weather"][1]["description"]:lower()
         units = math.floor(weather_now["main"]["temp"])
-        widget:set_markup(markup("#eca4c4", descr .. " @ " .. units .. "Â°C "))
+        widget:set_markup(markup("#eca4c4", descr .. " @ " .. units .. "°C "))
     end
 })
 
@@ -187,7 +189,7 @@ cpuwidget = lain.widgets.cpu({
 tempicon = wibox.widget.imagebox(beautiful.widget_temp)
 tempwidget = lain.widgets.temp({
     settings = function()
-        widget:set_markup(markup("#f1af5f", coretemp_now .. "Â°C "))
+        widget:set_markup(markup("#f1af5f", coretemp_now .. "°C "))
     end
 })
 
@@ -421,12 +423,28 @@ root.buttons(awful.util.table.join(
 globalkeys = awful.util.table.join(
     -- Take a screenshot
     -- https://github.com/copycat-killer/dots/blob/master/bin/screenshot
-    awful.key({ modkey }, "p", function() os.execute("screenshot") end),
+    awful.key({ altkey }, "p", function() os.execute("screenshot") end),
 
     -- Tag browsing
     awful.key({ modkey }, "Left",   awful.tag.viewprev       ),
     awful.key({ modkey }, "Right",  awful.tag.viewnext       ),
     awful.key({ modkey }, "Escape", awful.tag.history.restore),
+
+    -- Non-empty tag browsing
+    awful.key({ altkey }, "Left", function () lain.util.tag_view_nonempty(-1) end),
+    awful.key({ altkey }, "Right", function () lain.util.tag_view_nonempty(1) end),
+
+    -- Default client focus
+    awful.key({ altkey }, "k",
+        function ()
+            awful.client.focus.byidx( 1)
+            if client.focus then client.focus:raise() end
+        end),
+    awful.key({ altkey }, "j",
+        function ()
+            awful.client.focus.byidx(-1)
+            if client.focus then client.focus:raise() end
+        end),
 
     -- By direction client focus
     awful.key({ modkey }, "j",
@@ -496,9 +514,7 @@ globalkeys = awful.util.table.join(
     -- Widgets popups
     awful.key({ altkey,           }, "c",      function () lain.widgets.calendar:show(7) end),
     awful.key({ altkey,           }, "h",      function () fswidget.show(7) end),
-
-    -- Menubar
-    awful.key({ modkey }, "p", function() menubar.show() end),
+    awful.key({ altkey,           }, "w",      function () myweather.show(7) end),
 
     -- ALSA volume control
     awful.key({ altkey }, "Up",
@@ -547,10 +563,12 @@ globalkeys = awful.util.table.join(
     -- Copy to clipboard
     awful.key({ modkey }, "c", function () os.execute("xsel -p -o | xsel -i -b") end),
 
+    awful.key({ modkey }, "p", function () menubar.show() end),
+    
     -- User programs
     awful.key({ modkey }, "q", function () awful.util.spawn(browser) end),
     awful.key({ modkey }, "i", function () awful.util.spawn(browser2) end),
-    awful.key({ modkey }, "e", function () awful.util.spawn(gui_editor) end),
+    awful.key({ modkey }, "s", function () awful.util.spawn(gui_editor) end),
     awful.key({ modkey }, "g", function () awful.util.spawn(graphics) end),
 
     -- Prompt
@@ -647,14 +665,9 @@ awful.rules.rules = {
                      focus = awful.client.focus.filter,
                      keys = clientkeys,
                      buttons = clientbuttons,
-		     size_hints_honor = false } },
-    ------- Personal Rules - Program -----
-
-    { rule = { class = "Firefox" },
-      properties = { tag = tags[1][1] } },
-    ---------------------------------------
+	                   size_hints_honor = false } },
     { rule = { class = "URxvt" },
-      properties = { opacity = 0.99 } },
+          properties = { opacity = 0.99 } },
 
     { rule = { class = "MPlayer" },
           properties = { floating = true } },
