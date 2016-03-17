@@ -73,15 +73,16 @@ graphics   = "gimp"
 mail       = terminal .. " -e mutt "
 
 local layouts = {
-    awful.layout.suit.tile,
-    awful.layout.suit.tile.left,
-    awful.layout.suit.tile.bottom,
+   awful.layout.suit.tile,
+   awful.layout.suit.tile.left,
+   awful.layout.suit.tile.bottom,
     awful.layout.suit.tile.top,
     awful.layout.suit.fair,
     awful.layout.suit.fair.horizontal,
     awful.layout.suit.spiral,
     awful.layout.suit.spiral.dwindle,
     awful.layout.suit.max,
+    awful.layout.suit.floating,
 }
 -- }}}
 
@@ -137,7 +138,7 @@ lain.widgets.calendar:attach(mytextclock, { font_size = 10 })
 -- Weather
 weathericon = wibox.widget.imagebox(beautiful.widget_weather)
 myweather = lain.widgets.weather({
-    city_id = 123456, -- placeholder
+    city_id = madrid, -- placeholder
     settings = function()
         descr = weather_now["weather"][1]["description"]:lower()
         units = math.floor(weather_now["main"]["temp"])
@@ -372,8 +373,8 @@ for s = 1, screen.count() do
     right_layout:add(cpuwidget)
     right_layout:add(fsicon)
     right_layout:add(fswidget)
-    right_layout:add(weathericon)
-    right_layout:add(myweather)
+--    right_layout:add(weathericon)
+--    right_layout:add(myweather)
     right_layout:add(tempicon)
     right_layout:add(tempwidget)
     right_layout:add(baticon)
@@ -421,7 +422,7 @@ root.buttons(awful.util.table.join(
 globalkeys = awful.util.table.join(
     -- Take a screenshot
     -- https://github.com/copycat-killer/dots/blob/master/bin/screenshot
-    awful.key({ modkey }, "p", function() os.execute("screenshot") end),
+    awful.key({ modkey, "Control" }, "p", function() os.execute("screenshot") end),
 
     -- Tag browsing
     awful.key({ modkey }, "Left",   awful.tag.viewprev       ),
@@ -448,8 +449,17 @@ globalkeys = awful.util.table.join(
         function()
             awful.client.focus.bydirection("right")
             if client.focus then client.focus:raise() end
-        end),
-
+    end),
+    
+    -- dmenu
+    --    awful.key({modkey }, "-", function() awful.util.spawn( "dmenu_run" ) end),
+    awful.key({ modkey },            "-",     function ()
+    awful.util.spawn("dmenu_run -i -p 'Run command:' -nb '" .. 
+ 		beautiful.bg_normal .. "' -nf '" .. beautiful.fg_normal .. 
+		"' -sb '" .. beautiful.bg_focus .. 
+		"' -sf '" .. beautiful.fg_focus .. "'") 
+	end),
+    
     -- Show Menu
     awful.key({ modkey }, "w",
         function ()
@@ -521,7 +531,10 @@ globalkeys = awful.util.table.join(
             os.execute(string.format("amixer set %s 100%%", volumewidget.channel))
             volumewidget.update()
         end),
-
+    
+     -- ScreenLock
+    awful.key({ modkey            }, "l", function () awful.util.spawn("xscreensaver-command -lock") end),
+    
     -- MPD control
     awful.key({ altkey, "Control" }, "Up",
         function ()
@@ -569,7 +582,7 @@ clientkeys = awful.util.table.join(
     awful.key({ modkey, "Shift"   }, "c",      function (c) c:kill()                         end),
     awful.key({ modkey, "Control" }, "space",  awful.client.floating.toggle                     ),
     awful.key({ modkey, "Control" }, "Return", function (c) c:swap(awful.client.getmaster()) end),
-    awful.key({ modkey,           }, "o",      awful.client.movetoscreen                        ),
+    awful.key({ modkey, "Control" }, "o",      awful.client.movetoscreen                        ),
     awful.key({ modkey,           }, "t",      function (c) c.ontop = not c.ontop            end),
     awful.key({ modkey,           }, "n",
         function (c)
@@ -652,6 +665,19 @@ awful.rules.rules = {
 
     { rule = { class = "Firefox" },
       properties = { tag = tags[1][1] } },
+
+    { rule = { class = "Vivaldi" },
+      properties = { tag = tags[1][1] } },
+    
+    { rule = { class = "Emacs" },
+      properties = { tag = tags[1][2] } },
+    
+    { rule = { class = "Evince" },
+      properties = { tag = tags[1][4] } },
+
+    { rule = { class = "Telegram" },
+      properties = { tag = tags[1][7] } },
+    
     ---------------------------------------
     { rule = { class = "URxvt" },
       properties = { opacity = 0.99 } },
